@@ -1,0 +1,95 @@
+name: Update Kubernetes Configurations
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Nome do serviço a ser atualizado (exemplo: ocelot, notification)"
+        required: true
+
+  repository_dispatch:
+    types: [update-configurations]
+
+jobs:
+  update-service:
+    name: Update Service Configurations
+    runs-on: self-hosted
+
+    steps:
+      # Faz o checkout do código
+      - name: Checkout configurations
+        uses: actions/checkout@v2
+      
+      # Configura o acesso ao Kubernetes
+      - name: Set up Kubernetes configuration
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      # Atualiza o servico ocelot
+      - name: Update ocelot service
+        if: ${{ github.event.client_payload.services == 'ocelot' }}
+        run: |
+          echo "Deploying service: ocelot"
+      
+          SERVICE_DIR="./services/ocelot-service"
+
+          if [ ! -d "$SERVICE_DIR" ]; then
+            echo "Error: Directory $SERVICE_DIR does not exist."
+            exit 1
+          fi
+
+          DEPLOYMENT_FILE="$SERVICE_DIR/deployment.yaml"
+          if [ -f "$DEPLOYMENT_FILE" ]; then
+            IMAGE_DIGEST=$(curl -s https://hub.docker.com/v2/repositories/natanroberto182/ocelot/tags/latest | jq -r '.images[0].digest')
+            if [ -z "$IMAGE_DIGEST" ]; then
+              echo "Error: Failed to retrieve image digest for ocelot"
+              exit 1
+            fi
+            sed -i "s|image:.*|image: natanroberto182/ocelot@$IMAGE_DIGEST|" $DEPLOYMENT_FILE
+            kubectl apply -f $DEPLOYMENT_FILE
+          fi
+
+          SERVICE_FILE="$SERVICE_DIR/service.yaml"
+          if [ -f "$SERVICE_FILE" ]; then
+            kubectl apply -f $SERVICE_FILE
+          fi
+
+          CONFIGMAP_FILE="$SERVICE_DIR/configmap.yaml"
+          if [ -f "$CONFIGMAP_FILE" ]; then
+            kubectl apply -f $CONFIGMAP_FILE
+          fi
+
+      # Atualiza o servico User Query
+      - name: Update notification service
+        if: ${{ github.event.client_payload.services == 'notification' }}
+        run: |
+          echo "Deploying service: notification"
+      
+          SERVICE_DIR="./services/notification-service"
+
+          if [ ! -d "$SERVICE_DIR" ]; then
+            echo "Error: Directory $SERVICE_DIR does not exist."
+            exit 1
+          fi
+
+          DEPLOYMENT_FILE="$SERVICE_DIR/deployment.yaml"
+          if [ -f "$DEPLOYMENT_FILE" ]; then
+            IMAGE_DIGEST=$(curl -s https://hub.docker.com/v2/repositories/natanroberto182/notification/tags/latest | jq -r '.images[0].digest')
+            if [ -z "$IMAGE_DIGEST" ]; then
+              echo "Error: Failed to retrieve image digest for notification"
+              exit 1
+            fi
+            sed -i "s|image:.*|image: natanroberto182/notification@$IMAGE_DIGEST|" $DEPLOYMENT_FILE
+            kubectl apply -f $DEPLOYMENT_FILE
+          fi
+
+          SERVICE_FILE="$SERVICE_DIR/service.yaml"
+          if [ -f "$SERVICE_FILE" ]; then
+            kubectl apply -f $SERVICE_FILE
+          fi
+
+          CONFIGMAP_FILE="$SERVICE_DIR/configmap.yaml"
+          if [ -f "$CONFIGMAP_FILE" ]; then
+            kubectl apply -f $CONFIGMAP_FILE
+          fi
