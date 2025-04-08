@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: consultation-service
+spec:
+  selector:
+    app: consultation
+  ports:
+    - protocol: TCP
+      port: 5074
+      targetPort: 80
+  type: LoadBalancer
