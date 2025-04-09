@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: region-persistence-container
+  name: user-container
   labels:
-    app: region-persistence
+    app: user
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: region-persistence
+      app: user
   template:
     metadata:
       labels:
-        app: region-persistence
+        app: user
     spec:
       containers:
-      - name: region-persistence
-        image: "natanroberto182/region-persistence:latest"
+      - name: user
+        image: "natanroberto182/user:latest"
         ports:
         - containerPort: 80
         env:
         - name: ASPNETCORE_ENVIRONMENT
           valueFrom:
             configMapKeyRef:
-              name: region-persistence-config
+              name: user-config
               key: ASPNETCORE_ENVIRONMENT
         volumeMounts:
         - name: logs
