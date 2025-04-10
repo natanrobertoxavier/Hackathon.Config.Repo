@@ -26,7 +26,7 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-      # Atualiza o servico ocelot
+      # Atualiza o servico Ocelot
       - name: Update ocelot service
         if: ${{ github.event.client_payload.services == 'ocelot' }}
         run: |
